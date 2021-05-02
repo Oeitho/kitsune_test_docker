@@ -41,32 +41,36 @@ class IntrusionDetectionSystem(object):
         self.train_kitsune()
 
     def train_kitsune(self):
+        logging.info("Training Kitsune")
         path = "./packets.pcap"  # the pcap, pcapng, or tsv file to process.
-        packet_limit = np.inf  # the number of packets to process
+        packet_limit = 18000  # the number of packets to process
         # KitNET params:
         maxAE = 10  # maximum size for any autoencoder in the ensemble layer
         FMgrace = 5000  # the number of instances taken to learn the feature mapping (the ensemble's architecture)
-        ADgrace = 40000  # the number of instances used to train the anomaly detector (ensemble itself)
+        ADgrace = 12000  # the number of instances used to train the anomaly detector (ensemble itself)
         # Build Kitsune
         self.kitsune = Kitsune(path, packet_limit, maxAE, FMgrace, ADgrace)
         i = 0
+        logging.info("Processing packets")
         while True:
             i += 1
             if i % 1000 == 0:
-                print(i)
+                logging.info(i)
             rmse = self.kitsune.proc_next_packet()
             if rmse == -1:
                 break
+        logging.info("Finished training Kitsune")
 
     def packet_rmse(self, packet):
         return self.kitsune.process_packet(packet)
 
     def run(self):
-        capture = pyshark.LiveCapture(interface='any', bpf_filter='tcp port 8080', use_json=True, include_raw=True)
+        print("Start capture")
+        capture = pyshark.LiveCapture(interface='any', bpf_filter='tcp port 80', use_json=True, include_raw=True)
         for packet in capture.sniff_continuously():
             rmse = self.packet_rmse(packet)
-            logging.debug("RMSE: %s", rmse)
-            if rmse > 5:
+            if rmse > 1.0:
+                logging.info("Denying {}", packet['ip'].src)
                 self.deny_list.add_ip(packet['ip'].src, 30)
 
 
@@ -111,7 +115,7 @@ def main():
     ids_thread.start()
     logging.info("Creating thread for web server")
     ws_thread = threading.Thread(target=run_webserver, args=(deny_list,))
-    logging.info("Starting thread for Intrusion Detection System")
+    logging.info("Starting thread for web server")
     ws_thread.start()
 
 

@@ -25,6 +25,7 @@ import subprocess
 # If wireshark is used then a tsv file (parsed version of the pcap) will be made -which you can use as your input next time
 class FE:
     def __init__(self,file_path,limit=np.inf):
+        print("Initializing FeatureExtractor")
         self.path = file_path
         self.limit = limit
         self.parse_type = None #unknown
@@ -69,6 +70,7 @@ class FE:
         elif type == "pcap" or type == 'pcapng':
             # Try parsing via tshark dll of wireshark (faster)
             if os.path.isfile(self._tshark):
+                print("Creating tsv file with tshark")
                 self.pcap2tsv_with_tshark()  # creates local tsv file
                 self.path += ".tsv"
                 self.parse_type = "tsv"
