@@ -2,8 +2,6 @@ version: "3.9"
 services:
     web:
         build: ./web_server
-        ports:
-         - "80:80"
     client:
         build: ./python_client       
         volumes:
@@ -11,4 +9,11 @@ services:
         environment:
          - HOST_IP=web
         deploy:
-            replicas: 10
+            replicas: 80
+    malicious_client:
+        build: ./python_client
+        volumes:
+         - ./docker_data:/data
+        environment:
+         - HOST_IP=web
+         - CLIENT_TYPE=1

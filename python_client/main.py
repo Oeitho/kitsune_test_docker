@@ -4,6 +4,7 @@ import os
 import random
 import signal
 import socket
+import sys
 import threading
 import time
 
@@ -82,7 +83,6 @@ def client():
     iterations = 1
     while True:
         url = "http://{}:{}".format(HOST[0], str(HOST[1]))
-        print(url)
         with urllib.request.urlopen(url) as response:
             if (response.status == 200):
                 successful_connections += 1
@@ -126,9 +126,9 @@ def init_socket():
 
 
 def slow_http():
-    for _ in range(NUM_SOCKETS):
+    for _ in range(0, NUM_SOCKETS):
         try:
-            logging.debug("Creating socket nr %s", _)
+            logging.info("Creating socket nr %s", _)
             s = init_socket()
         except socket.error as e:
             logging.debug(e)
@@ -144,12 +144,14 @@ def slow_http():
             try:
                 s.send_header("X-a", random.randint(1, 5000))
             except socket.error:
-                global failed_connections
-                failed_connections += 1
+                logging.info("Failed to send header")
                 list_of_sockets.remove(s)
-
-        for _ in range(NUM_SOCKETS - len(list_of_sockets)):
-            logging.debug("Recreating socket...")
+        missing_sockets = NUM_SOCKETS - len(list_of_sockets)
+        logging.info("Missing sockets: {}", missing_sockets)
+        for _ in range(0, max(0, missing_sockets)):
+            global failed_connections
+            failed_connections += 1
+            logging.info("Recreating socket...")
             try:
                 s = init_socket()
                 if s:
@@ -164,8 +166,10 @@ def slow_http():
 def wait_and_kill():
     time.sleep(1200)
     global successful_connections
+    global failed_connections
     if CLIENT_TYPE == SLOW_HTTP_CLIENT:
-        successful_connections += len(list_of_sockets)
+        successful_connections = len(list_of_sockets)
+        logging.info("Had: {} successfult and {} faild connections", successful_connections, failed_connections)
     f = open(DATA_FILE_PATH, "w")
     output = "{}\n{}\n{}".format(CLIENT_TYPE, successful_connections, failed_connections)
     f.write(output)
@@ -175,7 +179,7 @@ def wait_and_kill():
 
 def main():
     # Wait for ids
-    time.sleep(30 + random.randint(0, 30))
+    time.sleep(1200 + random.randint(0, 30))
     waiting_thread = threading.Thread(target=wait_and_kill)
     waiting_thread.start()
     logging.basicConfig(format="%(asctime)s: %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
@@ -186,4 +190,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        try:
+            sys.exit(0)
+        except SystemExit:
+            os._exit(0)
