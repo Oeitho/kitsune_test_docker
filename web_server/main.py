@@ -43,11 +43,11 @@ class IntrusionDetectionSystem(object):
     def train_kitsune(self):
         logging.info("Training Kitsune")
         path = "./packets.pcap"  # the pcap, pcapng, or tsv file to process.
-        packet_limit = 18000  # the number of packets to process
+        packet_limit = 30000  # the number of packets to process
         # KitNET params:
         maxAE = 10  # maximum size for any autoencoder in the ensemble layer
-        FMgrace = 5000  # the number of instances taken to learn the feature mapping (the ensemble's architecture)
-        ADgrace = 12000  # the number of instances used to train the anomaly detector (ensemble itself)
+        FMgrace = 7000  # the number of instances taken to learn the feature mapping (the ensemble's architecture)
+        ADgrace = 22000  # the number of instances used to train the anomaly detector (ensemble itself)
         # Build Kitsune
         self.kitsune = Kitsune(path, packet_limit, maxAE, FMgrace, ADgrace)
         i = 0
@@ -59,26 +59,29 @@ class IntrusionDetectionSystem(object):
             rmse = self.kitsune.proc_next_packet()
             if rmse == -1:
                 break
-        logging.info("Finished training Kitsune")
+        logging.info("Finished processing {} packet".format(i))
 
     def packet_rmse(self, packet):
         return self.kitsune.process_packet(packet)
 
     def run(self):
-        print("Start capture")
         capture = pyshark.LiveCapture(interface='any', bpf_filter='tcp port 80', use_json=True, include_raw=True)
         for packet in capture.sniff_continuously():
             rmse = self.packet_rmse(packet)
             if rmse > 1.0:
-                logging.info("Denying {}", packet['ip'].src)
-                self.deny_list.add_ip(packet['ip'].src, 30)
+                ip = packet['ip'].src_host
+                ip_str = str(ip)
+                logging.info("Note: {}".format(ip_str))
+                if rmse > 3.0:
+                    logging.info("Denying {}".format(ip_str))
+                    self.deny_list.add_ip(ip_str, 30)
 
 
 
 class WebServer(BaseHTTPRequestHandler):
     def do_GET(self):
         ip = self.client_address[0]
-        denied = self.server.deny_list.is_ip_denied(ip)
+        denied = self.server.deny_list.is_ip_denied(str(ip))
         if denied:
             self.connection.close()
         else:

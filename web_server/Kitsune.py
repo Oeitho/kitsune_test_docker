@@ -36,7 +36,6 @@ class Kitsune:
     def process_packet(self, packet):
         # Process packet
         vectorized_packet = self.FE.process_packet(packet)
-        print(vectorized_packet)
         return self.AnomDetector.process(vectorized_packet)
     
     def proc_next_packet(self):

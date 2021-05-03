@@ -46,6 +46,7 @@ class FE:
             return 'C:\Program Files\Wireshark\\tshark.exe'
         else:
             system_path = os.environ['PATH']
+            print(system_path)
             for path in system_path.split(os.pathsep):
                 filename = os.path.join(path, 'tshark')
                 if os.path.isfile(filename):
@@ -57,7 +58,6 @@ class FE:
         if not os.path.isfile(self.path):  # file does not exist
             print("File: " + self.path + " does not exist")
             raise Exception()
-
         ### check file type ###
         type = self.path.split('.')[-1]
 
@@ -65,7 +65,6 @@ class FE:
         ##If file is TSV (pre-parsed by wireshark script)
         if type == "tsv":
             self.parse_type = "tsv"
-
         ##If file is pcap
         elif type == "pcap" or type == 'pcapng':
             # Try parsing via tshark dll of wireshark (faster)

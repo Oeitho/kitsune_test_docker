@@ -2,14 +2,18 @@ version: "3.9"
 services:
     web:
         build: ./web_server
+        volumes:
+         - ./packets:/data
     client:
         build: ./python_client       
         volumes:
          - ./docker_data:/data
         environment:
          - HOST_IP=web
+        depends_on:
+         - web
         deploy:
-            replicas: 80
+            replicas: 120
     malicious_client:
         build: ./python_client
         volumes:
@@ -17,3 +21,7 @@ services:
         environment:
          - HOST_IP=web
          - CLIENT_TYPE=1
+        depends_on:
+         - web
+        deploy:
+            replicas: 1

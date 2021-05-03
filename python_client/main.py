@@ -21,6 +21,9 @@ CLIENT_NAME = os.getenv('CLIENT_NAME', "client{}".format(str(random.randint(1, 1
 
 DATA_FILE_PATH = "/data/{}.data".format(CLIENT_NAME)
 
+WAIT_TIME_SECONDS = 720 + random.randint(0, 30)
+RUN_TIME_SECONDS = 1800
+
 
 def num_sockets(client_type):
     if client_type == BENIGN_CLIENT or client_type == SUBTLE_DDOS_CLIENT:
@@ -82,12 +85,17 @@ def client():
     global SLEEP_BETWEEN_REQUESTS
     iterations = 1
     while True:
-        url = "http://{}:{}".format(HOST[0], str(HOST[1]))
-        with urllib.request.urlopen(url) as response:
-            if (response.status == 200):
-                successful_connections += 1
-            else:
-                failed_connections += 1
+        try:
+            url = "http://{}:{}".format(HOST[0], str(HOST[1]))
+            with urllib.request.urlopen(url) as response:
+                if (response.status == 200):
+                    successful_connections += 1
+                else:
+                    logging.info("Failed connection")
+                    failed_connections += 1
+        except:
+            logging.info("Disconnected")
+            failed_connections += 1
         time.sleep(SLEEP_BETWEEN_REQUESTS)
         iterations += 1
         if iterations % SLEEP_BETWEEN_REQUESTS_REDUCE_INTERVAL == 0:
@@ -164,7 +172,7 @@ def slow_http():
 
 
 def wait_and_kill():
-    time.sleep(1200)
+    time.sleep(RUN_TIME_SECONDS)
     global successful_connections
     global failed_connections
     if CLIENT_TYPE == SLOW_HTTP_CLIENT:
@@ -179,7 +187,7 @@ def wait_and_kill():
 
 def main():
     # Wait for ids
-    time.sleep(1200 + random.randint(0, 30))
+    time.sleep(WAIT_TIME_SECONDS)
     waiting_thread = threading.Thread(target=wait_and_kill)
     waiting_thread.start()
     logging.basicConfig(format="%(asctime)s: %(message)s", datefmt="%H:%M:%S", level=logging.INFO)
