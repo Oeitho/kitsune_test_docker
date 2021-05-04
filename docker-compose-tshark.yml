@@ -1,0 +1,24 @@
+version: "3.9"
+services:
+    web:
+        build:
+            context: ./web_server
+            dockerfile: ./Dockerfile_TShark # For capturing packets
+        volumes:
+         - ./packets:/data
+        cap_add:
+         - NET_ADMIN
+         - NET_RAW
+        environment:
+         - NIDS=no # Shall be set to yes for normal runs. Only yes is recognized to mean True, everything else is False
+    client:
+        build: ./python_client       
+        volumes:
+         - ./docker_data:/data
+        environment:
+         - HOST_IP=web
+         - WAIT_TIME=0 # Time spent waiting before opening connections
+        depends_on:
+         - web
+        deploy:
+            replicas: 100

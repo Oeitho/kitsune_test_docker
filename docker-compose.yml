@@ -1,9 +1,16 @@
 version: "3.9"
 services:
     web:
-        build: ./web_server
+        build:
+            context: ./web_server
+            dockerfile: ./Dockerfile
         volumes:
          - ./packets:/data
+        cap_add:
+         - NET_ADMIN
+         - NET_RAW
+        environment:
+         - NIDS=yes # Shall be set to yes for normal runs. Only yes is recognized to mean True, everything else is False
     client:
         build: ./python_client       
         volumes:
@@ -13,15 +20,15 @@ services:
         depends_on:
          - web
         deploy:
-            replicas: 120
+            replicas: 100
     malicious_client:
         build: ./python_client
         volumes:
          - ./docker_data:/data
         environment:
          - HOST_IP=web
-         - CLIENT_TYPE=1
+         - CLIENT_TYPE=2
         depends_on:
          - web
         deploy:
-            replicas: 1
+            replicas: 2

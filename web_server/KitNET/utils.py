@@ -1,7 +1,7 @@
 
 import numpy
 from scipy.stats import norm
-numpy.seterr(all='ignore')
+numpy.seterr(over='raise')
 
 def pdf(x,mu,sigma): #normal distribution pdf
     x = (x-mu)/sigma
@@ -12,7 +12,14 @@ def invLogCDF(x,mu,sigma): #normal distribution cdf
     return norm.logcdf(-x) #note: we mutiple by -1 after normalization to better get the 1-cdf
 
 def sigmoid(x):
+    if type(x) is list:
+        x = list(map(lambda n: max(-700.0, n), x))
+    elif type(x).__module__ == numpy.__name__:
+        x = numpy.clip(x, -700.0, None)
+    else:
+        x = x if x > -700.0 else -700.0 # To fix overflow bug
     return 1. / (1 + numpy.exp(-x))
+    
 
 
 def dsigmoid(x):

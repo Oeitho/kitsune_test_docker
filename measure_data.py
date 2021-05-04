@@ -32,10 +32,22 @@ def main():
     for i in range(0, 4):
         print('-'*(PADDING * 3 + 2))
         print("{}|{}|{}".format(
-            pad(i, PADDING),
+            pad(client_type_name(i), PADDING),
             pad('Not present' if i not in successful_connections else successful_connections[i], PADDING),
             pad('Not present' if i not in failed_connections else failed_connections[i], PADDING)))
     print("\n")
+
+def client_type_name(client_type):
+    client_type = str(client_type)
+    if client_type == '0':
+        return 'Benign'
+    if client_type == '1':
+        return 'Slow HTTP'
+    if client_type == '2':
+        return 'DDoS'
+    if client_type == '3':
+        return 'Subtle DDoS'
+    return 'Other'
 
 def pad(input, padding, prepad = 2):
     input_str = str(input)
